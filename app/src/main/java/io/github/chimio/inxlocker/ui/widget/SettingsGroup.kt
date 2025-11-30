@@ -30,7 +30,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.drawable.toBitmap
-import io.github.chimio.inxlocker.ui.theme.Dimensions
+import kotlin.collections.forEachIndexed
 
 @Composable
 fun SettingsGroup(

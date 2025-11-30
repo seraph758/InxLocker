@@ -9,5 +9,3 @@ data class SwitchItem(
     val isChecked: Boolean,
     val onCheckedChange: (Boolean) -> Unit
 )
-
-
