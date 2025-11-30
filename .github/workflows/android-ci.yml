@@ -31,8 +31,11 @@ jobs:
         run: |
           sdkmanager "platform-tools" "platforms;android-36" "build-tools;36.0.0"
 
-      - name: Make gradlew executable
-        run: chmod +x ./gradlew
+      - name: Fix line endings
+        run: |
+          # Convert Windows line endings to Unix format
+          sed -i 's/\r$//' ./gradlew
+          chmod +x ./gradlew
 
       - name: Build release APK
         run: ./gradlew --no-daemon clean assembleRelease
