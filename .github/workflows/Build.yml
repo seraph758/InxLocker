@@ -3,7 +3,7 @@ name: Build InxLocker Force Edition
 on:
   push:
     branches: [ main, master ]
-  workflow_dispatch:   # 手动点一下也能触发
+  workflow_dispatch:
 
 jobs:
   build:
@@ -11,16 +11,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Fix line endings (终极防炸)
+        run: |
+          sudo apt-get update && sudo apt-get install -y dos2unix
+          find . -type f \( -name "*.sh" -o -name "gradlew" -o -name "*.properties" \) -exec dos2unix {} \;
+
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 21
 
-      - name: Grant execute permission for gradlew
+      - name: Grant execute permission
         run: chmod +x gradlew
 
-      - name: Build Debug APK
+      - name: Build APK
         run: ./gradlew assembleDebug --no-daemon
 
       - name: Upload APK
@@ -28,13 +33,3 @@ jobs:
         with:
           name: InxLocker-Force-${{ github.sha }}.apk
           path: app/build/outputs/apk/debug/app-debug.apk
-
-      - name: Create Release (only on main)
-        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
-        run: |
-          gh release create "force-$(date +%Y%m%d-%H%M)" \
-            app/build/outputs/apk/debug/app-debug.apk \
-            --title "InxLocker 强制拦截版 $(date +%F)" \
-            --notes "已移除所有判断，谁来打谁，应用宝也跪"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
