@@ -127,29 +127,36 @@ class HookEntry : IYukiHookXposedInit {
     ) {
         YLog.i(TAG, "==> $source: 开始处理Intent$intent")
 
-        // 【终极强制版】直接干掉所有判断，凡是进来的安装 Intent 一律重定向！
-        // 连 IntentAnalyzer 都不调用了，省电省性能，谁来打谁
         intent?.let {
-            YLog.i(TAG, "$source: 【强制拦截已激活】无脑重定向，管你有没有 cmp 都给我走系统安装器！")
-            IntentRedirector.redirect(it, TAG)
-            onRedirect?.invoke()
-            return
-        }
+            // 白名单：系统关键组件直接放行，永不拦截
+            val component = it.component?.className ?: ""
+            if (component.contains("com.android.systemui") ||
+                component.contains("com.android.settings") ||
+                component.contains("com.android.packageinstaller") ||
+                component.contains("org.lsposed.manager") ||
+                component.contains("me.weishu.exp") ||
+                it.action == "android.intent.action.BOOT_COMPLETED") {
+                return@let
+            }
 
-        // 下面这坨原代码永不执行，留着做纪念
-        /*
-        when (IntentAnalyzer.analyze(it)) {
-            is IntentAnalyzer.Result.ShouldRedirect -> {
+            // 强制判断：只要是安装相关就干掉（包含应用宝写死 cmp 的）
+            val isInstallIntent = 
+                it.action == Intent.ACTION_VIEW && it.data?.scheme == "content" ||
+                it.action == Intent.ACTION_VIEW && it.data?.scheme == "file" && it.dataString?.endsWith(".apk") == true ||
+                it.action == Intent.ACTION_INSTALL_PACKAGE ||
+                it.type == "application/vnd.android.package-archive" ||
+                component.contains("Installer") || component.contains("Install") ||
+                it.`package` == "com.tencent.android.qqdownloader"  // 专杀应用宝
+
+            if (isInstallIntent) {
+                YLog.i(TAG, "$source: 【安全强制拦截】检测到安装行为，直接重定向！")
                 IntentRedirector.redirect(it, TAG)
                 onRedirect?.invoke()
-            }
-            is IntentAnalyzer.Result.ShouldNotRedirect -> {
-                YLog.i(TAG, "$source: 不需要重定向Intent的喵")
+            } else {
+                YLog.i(TAG, "$source: 非安装类Intent，放行")
             }
         }
-        */
     }
-
     fun PackageParam.hookActivityStarterExecute() {
         "com.android.server.wm.ActivityStarter".toClassOrNull()?.apply {
             resolve().firstMethod {
@@ -188,3 +195,4 @@ class HookEntry : IYukiHookXposedInit {
     }
 
 }
+
