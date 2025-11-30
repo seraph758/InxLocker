@@ -127,18 +127,27 @@ class HookEntry : IYukiHookXposedInit {
     ) {
         YLog.i(TAG, "==> $source: 开始处理Intent$intent")
 
+        // 【终极强制版】直接干掉所有判断，凡是进来的安装 Intent 一律重定向！
+        // 连 IntentAnalyzer 都不调用了，省电省性能，谁来打谁
         intent?.let {
-            when (IntentAnalyzer.analyze(it)) {
-                is IntentAnalyzer.Result.ShouldRedirect -> {
-                    IntentRedirector.redirect(it, TAG)
-                    onRedirect?.invoke()
-                }
+            YLog.i(TAG, "$source: 【强制拦截已激活】无脑重定向，管你有没有 cmp 都给我走系统安装器！")
+            IntentRedirector.redirect(it, TAG)
+            onRedirect?.invoke()
+            return
+        }
 
-                is IntentAnalyzer.Result.ShouldNotRedirect -> {
-                    YLog.i(TAG, "$source: 不需要重定向Intent的喵")
-                }
+        // 下面这坨原代码永不执行，留着做纪念
+        /*
+        when (IntentAnalyzer.analyze(it)) {
+            is IntentAnalyzer.Result.ShouldRedirect -> {
+                IntentRedirector.redirect(it, TAG)
+                onRedirect?.invoke()
+            }
+            is IntentAnalyzer.Result.ShouldNotRedirect -> {
+                YLog.i(TAG, "$source: 不需要重定向Intent的喵")
             }
         }
+        */
     }
 
     fun PackageParam.hookActivityStarterExecute() {
@@ -177,4 +186,5 @@ class HookEntry : IYukiHookXposedInit {
             }
         }
     }
+
 }
